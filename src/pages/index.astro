@@ -1,5 +1,5 @@
 ---
-import { $counter } from "../counterStore";
+import { $counter } from "../store/counterStore";
 import Layout from "../layouts/Layout.astro";
 ---
 
@@ -21,7 +21,8 @@ import Layout from "../layouts/Layout.astro";
 </Layout>
 
 <script>
-	import { $counter } from "../counterStore";
+	import { $counter } from "../store/counterStore";
+	import { $lastEvent } from "../store/lastEvent";
 
 	$counter.set(parseInt(sessionStorage.getItem("counter") ?? "0"));
 
@@ -29,14 +30,24 @@ import Layout from "../layouts/Layout.astro";
 	const minusButton = document.getElementById("minus");
 	const resetButton = document.getElementById("reset");
 
-	plusButton?.addEventListener("click", () => {
+	const add = () => {
 		$counter.set($counter.get() + 1);
+		$lastEvent.set("+");
+	};
+
+	const substract = () => {
+		if ($counter.get() - 1 >= 0) {
+			$counter.set($counter.get() - 1);
+			$lastEvent.set("-");
+		}
+	};
+
+	plusButton?.addEventListener("click", () => {
+		add();
 	});
 
 	minusButton?.addEventListener("click", () => {
-		if ($counter.get() - 1 >= 0) {
-			$counter.set($counter.get() - 1);
-		}
+		substract();
 	});
 
 	resetButton?.addEventListener("click", () => {
@@ -44,9 +55,29 @@ import Layout from "../layouts/Layout.astro";
 	});
 
 	$counter.subscribe((value) => {
-		document.getElementsByClassName("counter")[0].innerHTML =
-			value.toString();
-			sessionStorage.setItem("counter", value.toString())
+		document.getElementsByClassName("counter")[0].innerHTML = value.toString();
+		sessionStorage.setItem("counter", value.toString());
+	});
+
+	document.addEventListener("keydown", (event) => {
+		console.log(event.key);
+		if (event.key == "-") {
+			substract();
+		} else if (event.key == "+") {
+			add();
+		} else if (event.key == " " || event.key == "Enter") {
+			console.log("le: ", $lastEvent.get());
+			switch ($lastEvent.get()) {
+				case "+":
+					console.log("plus");
+					add();
+					break;
+				case "-":
+					console.log("minus");
+					substract();
+					break;
+			}
+		}
 	});
 </script>
 
